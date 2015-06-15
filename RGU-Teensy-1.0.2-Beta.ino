@@ -192,7 +192,7 @@ void loop() {
 
 }
 
-audio_block_t runFHT() {
+void runFHT() {
   int k = 0;
 
   for (int i = 0 ; i < 512 ; i++) { // save 256 samples
@@ -215,6 +215,8 @@ audio_block_t runFHT() {
     //Serial.println(value * 3.3 / adc->getMaxValue(ADC_0), DEC);
   }
 
+
+//This function can be used to get the 256 datapoints(or is it 512) then call the updater()
 }
 
 static void copy_to_fft_buffer(void *destination, const void *source)
@@ -242,26 +244,36 @@ static void apply_window_to_fft_buffer(void *buffer, const void *window)
 }
 
 
-audio_block_t getAllValues(){
-  
-  
-}
+
+/*This is where the actual Math occurs
+* ideally this function could be passed in any block left or right channel 
+*/
 void updater(void)
 {
-  audio_block_t *block;
+  audio_block_t *block; //it addresses a block
 
-  //block = receiveReadOnly();
+  //block = receiveReadOnly(); //gets pointer to audio_block_struct This may be only 128 samples at a time thats why it does it twice
   if (!block) return;
   if (!prevblock) {
     prevblock = block;
     return;
   }
-  copy_to_fft_buffer(buffer, prevblock->data);
-  //copy_to_fft_buffer(buffer + 256, block->data);
+  
+//void calcFFT(audio_block_t *block){
+//copy_to_fft_buffer(buffer,block->data);
+
+//remove next line
+copy_to_fft_buffer(buffer, prevblock->data); //puts the audio_block_struct->data into fft buffer
+  //copy_to_fft_buffer(buffer + 256, block->data); // looks like its putting 512 datapoints into the block->data
+
+
+//pick a windowFunction
   //window = AudioWindowBlackmanNuttall256;
   //window = NULL;
-  if (window) apply_window_to_fft_buffer(buffer, window);
-  arm_cfft_radix4_q15(&fft_inst, buffer);
+  
+
+if (window) apply_window_to_fft_buffer(buffer, window); //applies the window
+  arm_cfft_radix4_q15(&fft_inst, buffer);  //DSP accelerated FFT
   // G. Heinzel's paper says we're supposed to average the magnitude
   // squared, then do the square root at the end.
   if (count == 0) {
@@ -280,11 +292,11 @@ void updater(void)
   if (++count == naverage) {
     count = 0;
     for (int i = 0; i < 128; i++) {
-      output[i] = sqrt_uint32_approx(sum[i]);
+      output[i] = sqrt_uint32_approx(sum[i]); //puts everything neatly in output array
     }
-    outputflag = true;
+    outputflag = true; //sets the flag 
   }
-  //release(prevblock);
+  //release(prevblock);//dealloc, does this calloc(sizeof(audio_block_t)); ?
   prevblock = block;
 }
 
