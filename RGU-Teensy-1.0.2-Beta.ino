@@ -252,7 +252,7 @@ void updater(void)
 {
   audio_block_t *block; //it addresses a block
 
-  //block = receiveReadOnly(); //gets pointer to audio_block_struct This may be only 128 samples at a time thats why it does it twice
+  //block = receiveReadOnly(); //It does this twice to get 512 audio samples
   if (!block) return;
   if (!prevblock) {
     prevblock = block;
